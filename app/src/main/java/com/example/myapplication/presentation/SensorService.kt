@@ -29,16 +29,13 @@ class SensorService : Service(), SensorEventListener {
     override fun onCreate() {
         super.onCreate()
 
-        // Foreground Service 알림 생성
         startForegroundService()
 
-        // 센서 매니저와 햅틱 설정
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
         vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
 
-        // 센서 리스너 등록
         sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI)
         sensorManager.registerListener(this, gyroscope, SensorManager.SENSOR_DELAY_UI)
     }
@@ -74,27 +71,31 @@ class SensorService : Service(), SensorEventListener {
     }
 
     private fun handleAccelerometerData(values: FloatArray) {
-        // 가속도 계산
         val accelMagnitude = Math.sqrt(
             (values[0] * values[0] + values[1] * values[1] + values[2] * values[2]).toDouble()
         )
 
-        // 가속도 임계값 초과 시 햅틱 알람
         if (accelMagnitude > ACCEL_THRESHOLD) {
+            sendUpdateBroadcast("ACCELEROMETER")
             triggerHapticAlert()
         }
     }
 
     private fun handleGyroscopeData(values: FloatArray) {
-        // 회전 속도 계산
         val tiltMagnitude = Math.sqrt(
             (values[0] * values[0] + values[1] * values[1] + values[2] * values[2]).toDouble()
         )
 
-        // 기울기 임계값 초과 시 햅틱 알람
         if (tiltMagnitude > TILT_THRESHOLD) {
+            sendUpdateBroadcast("GYROSCOPE")
             triggerHapticAlert()
         }
+    }
+
+    private fun sendUpdateBroadcast(sensorType: String) {
+        val intent = Intent("com.example.myapplication.SENSOR_UPDATE")
+        intent.putExtra("SENSOR_TYPE", sensorType)
+        sendBroadcast(intent)
     }
 
     private fun triggerHapticAlert() {
@@ -103,9 +104,7 @@ class SensorService : Service(), SensorEventListener {
         )
     }
 
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        // 필요시 구현
-    }
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
 
     override fun onDestroy() {
         super.onDestroy()
